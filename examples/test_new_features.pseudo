@@ -1,0 +1,77 @@
+# test_new_features.pseudo
+
+# ── WHILE LOOP ───────────────────────────────────────────────
+count = 1
+while count <= 5
+    print count
+    increase count by 1
+done
+
+# ── ELSE IF ──────────────────────────────────────────────────
+score = 75
+check if score >= 90
+if yes → say "A grade"
+else if score >= 80 → say "B grade"
+else if score >= 70 → say "C grade"
+else → say "F grade"
+
+# ── RANDOM ───────────────────────────────────────────────────
+random integer between 1 and 10 into dice
+print dice
+
+# ── ROUNDING ─────────────────────────────────────────────────
+calculate 22 / 7 into pi
+round pi to 2 decimals into pi_rounded
+print pi_rounded
+
+format pi to 4 decimals into pi_formatted
+print pi_formatted
+
+# ── ABSOLUTE VALUE ────────────────────────────────────────────
+absolute value of -42 into positive
+print positive
+
+# ── POWER ────────────────────────────────────────────────────
+power of 2 to 8 into result
+print result
+
+# ── STRING EXTRAS ─────────────────────────────────────────────
+email = "lepri@gmail.com"
+check if email ends with ".com"
+if yes → say "valid domain"
+else → say "invalid domain"
+
+check if email starts with "lepri"
+if yes → say "lepri's email"
+
+check if email contains "@"
+if yes → say "has @ sign"
+
+get length of email into email_len
+print email_len
+
+find "gmail" in email into pos
+print pos
+
+name = "Pseudo"
+suffix = " Language"
+combine name and suffix into full_name
+print full_name
+
+# ── LIST EXTRAS ───────────────────────────────────────────────
+fruits = [apple, banana, cherry, mango, grape]
+
+get item 3 from fruits into third
+print third
+
+get length of fruits into fruit_count
+print fruit_count
+
+check if fruits contains "banana"
+if yes → say "banana is in the list"
+
+remove item 2 from fruits
+print fruits
+
+remove value "grape" from fruits
+print fruits
