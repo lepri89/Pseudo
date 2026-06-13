@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pseudo — The language that speaks your language</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #080C10;
+    --surface:   #0D1117;
+    --surface2:  #161B22;
+    --border:    #21262D;
+    --text:      #E8EDF2;
+    --muted:     #8B949E;
+    --blue:      #3B82F6;
+    --blue-dim:  #1D4ED8;
+    --green:     #4ADE80;
+    --green-dim: #166534;
+    --red:       #F87171;
+    --yellow:    #FBBF24;
+    --purple:    #A78BFA;
+    --orange:    #FB923C;
+    --font-code: 'JetBrains Mono', monospace;
+    --font-ui:   'Inter', sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    overflow: hidden;
+  }
+
+  /* ── Layout ────────────────────────────────────────────────── */
+
+  .app {
+    display: grid;
+    grid-template-rows: 52px 1fr;
+    height: 100vh;
+  }
+
+  /* ── Header ────────────────────────────────────────────────── */
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    gap: 16px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .logo-mark {
+    font-family: var(--font-code);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--blue);
+    letter-spacing: -1px;
+  }
+
+  .logo-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+
+  .logo-version {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--font-code);
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .header-center {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .example-btn {
+    font-family: var(--font-code);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .example-btn:hover {
+    border-color: var(--blue);
+    color: var(--blue);
+  }
+  .example-btn.active {
+    border-color: var(--blue);
+    color: var(--blue);
+    background: rgba(59,130,246,0.08);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .github-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .github-link:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ── Main area ─────────────────────────────────────────────── */
+
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* ── Editor panel ──────────────────────────────────────────── */
+
+  .editor-panel {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .panel-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 38px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .panel-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-family: var(--font-code);
+  }
+
+  .file-tag {
+    font-family: var(--font-code);
+    font-size: 11px;
+    color: var(--blue);
+    background: rgba(59,130,246,0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .editor-wrap {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .line-numbers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 44px;
+    height: 100%;
+    overflow: hidden;
+    padding: 16px 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .line-num {
+    display: block;
+    text-align: right;
+    padding-right: 10px;
+    font-family: var(--font-code);
+    font-size: 13px;
+    line-height: 22px;
+    color: var(--border);
+    user-select: none;
+  }
+
+  textarea#editor {
+    position: absolute;
+    top: 0;
+    left: 44px;
+    right: 0;
+    bottom: 0;
+    width: calc(100% - 44px);
+    height: 100%;
+    background: var(--surface);
+    color: var(--text);
+    caret-color: var(--blue);
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: var(--font-code);
+    font-size: 13px;
+    line-height: 22px;
+    padding: 16px 16px;
+    tab-size: 4;
+    white-space: pre;
+    overflow: auto;
+    z-index: 2;
+  }
+
+  .highlight-layer {
+    display: none;
+  }
+
+  /* ── Syntax colors ─────────────────────────────────────────── */
+  .t-comment  { color: #5C6A78; font-style: italic; }
+  .t-string   { color: #79C0FF; }
+  .t-number   { color: #79C0FF; }
+  .t-control  { color: #FF7B72; font-weight: 600; }
+  .t-action   { color: #D2A8FF; }
+  .t-logic    { color: #FFA657; }
+  .t-math     { color: #4ADE80; }
+  .t-arrow    { color: #3B82F6; font-weight: 700; }
+  .t-op       { color: #FF7B72; }
+  .t-bool     { color: #79C0FF; font-weight: 600; }
+  .t-builtin  { color: #FFA657; }
+  .t-plain    { color: #E8EDF2; }
+
+  /* ── Run button ────────────────────────────────────────────── */
+
+  .run-bar {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .run-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 7px;
+    border: none;
+    background: var(--blue);
+    color: white;
+    font-family: var(--font-code);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .run-btn:hover { background: #2563EB; transform: translateY(-1px); }
+  .run-btn:active { transform: translateY(0); }
+
+  .run-arrow {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .clear-btn {
+    padding: 8px 14px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-code);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .clear-btn:hover { color: var(--text); border-color: var(--muted); }
+
+  .shortcut-hint {
+    font-family: var(--font-code);
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  kbd {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 10px;
+  }
+
+  /* ── Output panel ──────────────────────────────────────────── */
+
+  .output-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .output-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    font-family: var(--font-code);
+    font-size: 13px;
+    line-height: 22px;
+  }
+
+  .output-empty {
+    color: var(--muted);
+    font-style: italic;
+    padding: 8px 0;
+  }
+
+  .output-line {
+    display: block;
+    padding: 1px 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .output-line.out    { color: var(--green); }
+  .output-line.err    { color: var(--red); }
+  .output-line.info   { color: var(--blue); }
+  .output-line.muted  { color: var(--muted); }
+
+  .output-line.err::before { content: '✗ '; }
+
+  /* running animation */
+  .running-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--blue);
+    animation: pulse 0.8s infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.3; transform: scale(0.7); }
+  }
+
+  /* ── Docs panel (bottom of output) ────────────────────────── */
+
+  .docs-bar {
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .docs-tabs {
+    display: flex;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+  }
+  .docs-tabs::-webkit-scrollbar { display: none; }
+
+  .docs-tab {
+    padding: 8px 14px;
+    font-size: 11px;
+    font-family: var(--font-code);
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .docs-tab:hover { color: var(--text); }
+  .docs-tab.active { color: var(--blue); border-color: var(--blue); }
+
+  .docs-content {
+    padding: 10px 14px;
+    font-family: var(--font-code);
+    font-size: 12px;
+    line-height: 20px;
+    color: var(--muted);
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .docs-content code {
+    color: var(--text);
+    background: var(--surface2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+
+  .docs-content .ex { color: var(--green); }
+
+  /* ── Scrollbar ─────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── Mobile ────────────────────────────────────────────────── */
+  @media (max-width: 700px) {
+    .main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+    .editor-panel { border-right: none; border-bottom: 1px solid var(--border); }
+    .header-center { display: none; }
+    .shortcut-hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <a class="logo" href="#">
+      <span class="logo-mark">{ }</span>
+      <span class="logo-name">Pseudo</span>
+      <span class="logo-version">v1.0</span>
+    </a>
+
+    <div class="header-center" id="exampleBtns">
+      <button class="example-btn active" onclick="loadExample('basics')">basics</button>
+      <button class="example-btn" onclick="loadExample('filter')">filter list</button>
+      <button class="example-btn" onclick="loadExample('functions')">functions</button>
+      <button class="example-btn" onclick="loadExample('strings')">strings</button>
+      <button class="example-btn" onclick="loadExample('objects')">objects</button>
+      <button class="example-btn" onclick="loadExample('loops')">loops</button>
+      <button class="example-btn" onclick="loadExample('math')">math</button>
+      <button class="example-btn" onclick="loadExample('game')">guessing game</button>
+      <button class="example-btn" onclick="loadExample('grades')">grade calculator</button>
+    </div>
+
+    <div class="header-right">
+      <a class="github-link" href="https://github.com/pseudo-lang/pseudo" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        GitHub
+      </a>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Editor -->
+    <div class="editor-panel">
+      <div class="panel-bar">
+        <span class="panel-label">editor</span>
+        <span class="file-tag">program.pseudo</span>
+      </div>
+
+      <div class="editor-wrap">
+        <div class="line-numbers" id="lineNumbers"></div>
+        <div class="highlight-layer" id="highlight"></div>
+        <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+      </div>
+
+      <div class="run-bar">
+        <button class="run-btn" onclick="runCode()">
+          <span class="run-arrow">→</span>
+          Run
+        </button>
+        <button class="clear-btn" onclick="clearOutput()">Clear</button>
+        <span class="shortcut-hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run</span>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div class="output-panel">
+      <div class="panel-bar">
+        <span class="panel-label">output</span>
+        <span id="statusTag" class="file-tag" style="display:none"></span>
+      </div>
+
+      <div class="output-body" id="output">
+        <span class="output-empty">Run your program to see output here...</span>
+      </div>
+
+      <div class="docs-bar">
+        <div class="docs-tabs">
+          <div class="docs-tab active" onclick="showDoc('variables')">variables</div>
+          <div class="docs-tab" onclick="showDoc('conditions')">conditions</div>
+          <div class="docs-tab" onclick="showDoc('loops')">loops</div>
+          <div class="docs-tab" onclick="showDoc('math')">math</div>
+          <div class="docs-tab" onclick="showDoc('strings')">strings</div>
+          <div class="docs-tab" onclick="showDoc('functions')">functions</div>
+          <div class="docs-tab" onclick="showDoc('objects')">objects</div>
+          <div class="docs-tab" onclick="showDoc('list')">list ops</div>
+        </div>
+        <div class="docs-content" id="docsContent"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── Examples ──────────────────────────────────────────────────────────────────
+
+const EXAMPLES = {
+  basics: `# Welcome to Pseudo!
+# The language that speaks your language.
+
+number = 18
+divide number by 2
+if remainder = 0 → say "even"
+else → say "odd"
+
+password = "mypassword123"
+count characters in password
+if count >= 8 → say "password is strong"
+else → say "password is weak"
+
+check if number >= 18
+if yes → say "adult"
+else → say "minor"`,
+
+  filter: `# Filter a list
+
+students = [45, 78, 32, 91, 50, 29, 61]
+
+# Find who passed (score >= 50)
+go in students
+find each item where item >= 50
+print each
+
+# Sum all scores
+add all students together
+print total
+
+# Biggest score
+compare students
+print biggest
+
+# Remove negative numbers
+numbers = [4, -2, 7, -5, 3, -1, 9]
+remove from numbers where number < 0
+print numbers`,
+
+  functions: `# Define and run functions
+
+define greet with name
+    say "Hello,"
+    print name
+    say "Welcome to Pseudo!"
+done
+
+run greet with "Lepri"
+run greet with "World"
+
+# Function with math
+define multiply_and_show with a, b
+    increase a by b
+    print a
+done
+
+run multiply_and_show with 10, 25
+run multiply_and_show with 100, 50`,
+
+  strings: `# String manipulation
+
+name = "  lepri demiri  "
+make name trimmed
+make name uppercase
+print name
+
+sentence = "Hello World from Pseudo"
+replace "World" with "Everyone" in sentence
+print sentence
+
+# Split and join
+text = "the quick brown fox"
+split text by " " into words
+print words
+
+join words with "-" into dashed
+print dashed
+
+# Get part of string
+get first 5 characters of sentence into short
+print short
+
+# Validate emails
+emails = [test@gmail.com, invalidemail, hello@yahoo.com, notvalid]
+go in emails
+check each email if "@" exists`,
+
+  objects: `# Working with objects
+
+make object user with name: "Lepri", age: 21, city: "Skopje"
+
+print user.name
+print user.age
+print user.city
+
+set user.country to "North Macedonia"
+get user.country into country
+print country
+
+# Another object
+make object product with name: "Laptop", price: 999, stock: 15
+
+check if product.stock > 0
+if yes → say "in stock"
+else → say "out of stock"
+
+check if product.price > 500
+if yes → say "premium product"
+else → say "budget product"`,
+
+  loops: `# Loops and iteration
+
+# Repeat
+repeat 5 times
+    print iteration
+done
+
+# For each
+fruits = [apple, banana, cherry, mango]
+for each fruit in fruits
+    print fruit
+done
+
+# Range
+start from 1
+go up to 5
+print each
+
+# Build a list with loop
+total = 0
+numbers = [10, 20, 30, 40, 50]
+for each num in numbers
+    increase total by num
+done
+print total`,
+
+  game: `# Number guessing game
+# (in a real program you'd use 'ask' for input)
+
+secret = 42
+guess = 30
+
+check if guess = secret
+if yes → say "You guessed it!"
+else if guess < secret → say "Too low! Go higher."
+else → say "Too high! Go lower."
+
+# While loop example
+count = 1
+while count <= 5
+    print count
+    increase count by 1
+done
+
+# Random number
+random integer between 1 and 100 into lucky
+say "Your lucky number is:"
+print lucky`,
+
+  grades: `# Grade calculator
+
+scores = [85, 92, 78, 96, 88, 73, 91]
+
+# Total and average
+add all scores together
+print total
+
+get length of scores into num_scores
+calculate total / num_scores into average
+round average to 1 decimals into avg_rounded
+print avg_rounded
+
+# Best and worst
+compare scores
+print biggest
+print smallest
+
+# Count who passed (>= 70)
+go in scores
+find each item where item >= 70
+print each
+
+# Grade based on average
+check if average >= 90
+if yes → say "Class grade: A"
+else if average >= 80 → say "Class grade: B"
+else if average >= 70 → say "Class grade: C"
+else → say "Class grade: F"`,
+
+  math: `# Math operations
+# Basic math
+calculate 10 * 5 + 3 into answer
+print answer
+
+calculate 100 / 4 into quarter
+print quarter
+
+# Square root
+calculate sqrt(144) into root
+print root
+
+# Increase / decrease
+score = 100
+multiply score by 2
+print score
+
+subtract 50 from score
+print score
+
+increase score by 25
+print score
+
+decrease score by 10
+print score
+
+# Sum and compare
+prices = [230, 73, 18, 150, 95]
+add all prices together
+print total
+
+compare prices
+print biggest
+print smallest`
+};
+
+// ── Docs ──────────────────────────────────────────────────────────────────────
+
+const DOCS = {
+  variables: `<b>Declare variables:</b><br>
+<code>name = "Lepri"</code> &nbsp; <code>age = 21</code> &nbsp; <code>scores = [85, 42, 91]</code><br>
+<span class="ex">name = value &nbsp;|&nbsp; list = [a, b, c]</span>`,
+
+  conditions: `<b>Check conditions:</b><br>
+<code>check if age >= 18</code> → <code>if yes → say "adult"</code> → <code>else → say "minor"</code><br>
+<code>if age >= 18 → say "adult"</code> &nbsp; combine with <code>and</code> / <code>or</code>`,
+
+  loops: `<b>Loop patterns:</b><br>
+<code>repeat 5 times ... done</code> &nbsp; <code>for each item in list ... done</code><br>
+<code>go in list</code> + <code>find each item where score >= 50</code> + <code>print each</code><br>
+<code>start from 0</code> + <code>go up to 10</code> + <code>print each</code>`,
+
+  math: `<b>Math:</b><br>
+<code>divide x by 2</code> → <code>remainder</code>, <code>quotient</code><br>
+<code>increase x by n</code> &nbsp; <code>decrease x by n</code> &nbsp; <code>multiply x by n</code> &nbsp; <code>subtract n from x</code><br>
+<code>add all list together</code> → <code>total</code> &nbsp; <code>compare list</code> → <code>biggest</code>, <code>smallest</code><br>
+<code>calculate 10 * 5 + sqrt(9) into result</code>`,
+
+  strings: `<b>Strings:</b><br>
+<code>make name uppercase</code> / <code>lowercase</code> / <code>trimmed</code><br>
+<code>replace "old" with "new" in text</code><br>
+<code>split text by " " into words</code> &nbsp; <code>join words with "-" into result</code><br>
+<code>get first 5 characters of text into short</code> &nbsp; <code>convert x to string</code>`,
+
+  functions: `<b>Functions:</b><br>
+<code>define greet with name</code><br>
+&nbsp;&nbsp;<code>say "Hello"</code><br>
+<code>done</code><br>
+<code>run greet with "Lepri"</code> &nbsp; result stored in <code>result</code>`,
+
+  objects: `<b>Objects:</b><br>
+<code>make object user with name: "Lepri", age: 21</code><br>
+<code>print user.name</code> &nbsp; <code>set user.city to "Skopje"</code><br>
+<code>get user.name into myname</code>`,
+
+  list: `<b>List operations:</b><br>
+<code>append "item" to list</code> &nbsp; <code>sort list ascending</code> / <code>descending</code><br>
+<code>reverse list</code> &nbsp; <code>count words in list</code><br>
+<code>remove from list where score < 50</code> &nbsp; <code>find each item where age > 18</code>`
+};
+
+// ── Pseudo Interpreter (JS port) ──────────────────────────────────────────────
+
+class PseudoInterpreter {
+  constructor() {
+    this.variables = {};
+    this.functions = {};
+    this.currentList = [];
+    this.lastCondition = false;
+    this.output = [];
+  }
+
+  out(msg) {
+    this.output.push({ type: 'out', text: msg });
+  }
+
+  err(msg) {
+    this.output.push({ type: 'err', text: msg });
+  }
+
+  parseValue(s) {
+    s = s.trim();
+    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+      return s.slice(1, -1);
+    }
+    if (s.startsWith('[') && s.endsWith(']')) {
+      const inner = s.slice(1, -1).trim();
+      if (!inner) return [];
+      return inner.split(',').map(i => this.coerce(i.trim().replace(/^["']|["']$/g, '')));
+    }
+    return this.coerce(s);
+  }
+
+  coerce(s) {
+    s = String(s).trim();
+    if (s === 'true') return true;
+    if (s === 'false') return false;
+    if (s === 'null' || s === 'nothing' || s === 'none') return null;
+    if (!isNaN(s) && s !== '') return Number(s);
+    return s;
+  }
+
+  resolve(token) {
+    token = String(token).trim().replace(/^["']|["']$/g, '');
+    if (token in this.variables) return this.variables[token];
+    return this.coerce(token);
+  }
+
+  resolveExpr(expr) {
+    expr = expr.trim();
+    if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
+      return expr.slice(1, -1);
+    }
+    if (expr.includes('.') && !/^\d+\.\d+$/.test(expr)) {
+      const [obj, prop] = expr.split('.', 2);
+      const objVal = this.resolve(obj.trim());
+      if (objVal && typeof objVal === 'object') return objVal[prop.trim()];
+    }
+    return this.resolve(expr);
+  }
+
+  toNum(v) {
+    const n = Number(v);
+    return isNaN(n) ? null : n;
+  }
+
+  compare(a, b, op) {
+    const an = this.toNum(a), bn = this.toNum(b);
+    if (an !== null && bn !== null) {
+      a = an; b = bn;
+    } else {
+      a = String(a); b = String(b);
+    }
+    switch (op) {
+      case '=': case '==': return a == b;
+      case '!=': return a != b;
+      case '>':  return a > b;
+      case '<':  return a < b;
+      case '>=': return a >= b;
+      case '<=': return a <= b;
+    }
+    return false;
+  }
+
+  evalCondition(s) {
+    s = s.trim();
+    if (s.includes(' and ')) {
+      return s.split(' and ').every(p => this.evalCondition(p.trim()));
+    }
+    if (s.includes(' or ')) {
+      return s.split(' or ').some(p => this.evalCondition(p.trim()));
+    }
+    if (s.startsWith('not ')) return !this.evalCondition(s.slice(4));
+
+    // X exists in Y
+    let m = s.match(/["']?(.+?)["']?\s+exists\s+in\s+(\w+)/);
+    if (m) return String(this.resolve(m[2])).includes(m[1]);
+
+    // X is empty / not empty
+    m = s.match(/(\w+)\s+is\s+not\s+empty/);
+    if (m) { const v = this.resolve(m[1]); return v !== null && v !== undefined && String(v) !== '' && !(Array.isArray(v) && v.length === 0); }
+    m = s.match(/(\w+)\s+is\s+empty/);
+    if (m) { const v = this.resolve(m[1]); return v === null || v === undefined || String(v) === '' || (Array.isArray(v) && v.length === 0); }
+
+    // standard
+    const ops = ['>=', '<=', '!=', '==', '>', '<', '='];
+    for (const op of ops) {
+      const idx = s.indexOf(op);
+      if (idx < 0) continue;
+      const left = s.slice(0, idx).trim();
+      const right = s.slice(idx + op.length).trim().replace(/^["']|["']$/g, '');
+      return this.compare(this.resolveExpr(left), this.resolve(right), op);
+    }
+    return false;
+  }
+
+  filterList(lst, cond, keep) {
+    if (!lst || !lst.length) return lst;
+    const m = cond.trim().match(/(\w+)\s*(>=|<=|!=|==|>|<|=)\s*(.+)/);
+    if (!m) return lst;
+    const [, prop, op, valStr] = m;
+    const right = this.resolve(valStr.trim().replace(/^["']|["']$/g, ''));
+    return lst.filter(item => {
+      const itemVal = (item && typeof item === 'object') ? item[prop] : item;
+      const matches = this.compare(itemVal, right, op);
+      return keep ? matches : !matches;
+    });
+  }
+
+  toString(v) {
+    if (v === null || v === undefined) return 'null';
+    if (Array.isArray(v)) return '[' + v.map(i => this.toString(i)).join(', ') + ']';
+    if (typeof v === 'object') return Object.entries(v).map(([k,val]) => `${k}: ${this.toString(val)}`).join(', ');
+    return String(v);
+  }
+
+  execute(code) {
+    const lines = code.split('\n').map(l => l.trimEnd());
+    this.execLines(lines, 0, lines.length);
+  }
+
+  collectBlock(lines, start, end) {
+    const body = [];
+    let depth = 0;
+    for (let j = start + 1; j < end; j++) {
+      const s = lines[j].trim();
+      if (/^(define|repeat|for each)\b/.test(s)) depth++;
+      if (s === 'done') {
+        if (depth === 0) return [body, j];
+        depth--;
+      }
+      body.push(lines[j]);
+    }
+    return [body, end];
+  }
+
+  execLines(lines, start, end) {
+    let i = start;
+    while (i < end) {
+      const line = lines[i].trim();
+      if (!line || line.startsWith('#')) { i++; continue; }
+      try {
+        const next = this.execLine(line, lines, i, end);
+        i = next >= 0 ? next : i + 1;
+      } catch(e) {
+        if (e && e.type === 'stop') return;
+        if (e && e.type === 'return') throw e;
+        this.err(e.message || String(e));
+        i++;
+      }
+    }
+  }
+
+  subInterp() {
+    const sub = new PseudoInterpreter();
+    sub.variables = { ...this.variables };
+    sub.functions = this.functions;
+    sub.currentList = this.currentList ? [...this.currentList] : [];
+    sub.lastCondition = this.lastCondition;
+    return sub;
+  }
+
+  mergeFrom(sub) {
+    Object.assign(this.variables, sub.variables);
+    this.currentList = sub.currentList;
+    this.lastCondition = sub.lastCondition;
+    // merge output
+    this.output.push(...sub.output);
+  }
+
+  doOutcome(outcome) {
+    outcome = outcome.trim();
+    if (/^(say|print)\s+/.test(outcome)) {
+      let msg = outcome.replace(/^(say|print)\s+/, '').trim().replace(/^["']|["']$/g, '');
+      msg = String(this.variables[msg] !== undefined ? this.variables[msg] : msg);
+      this.out(msg);
+    } else if (outcome.startsWith('return ')) {
+      throw { type: 'return', value: this.resolveExpr(outcome.slice(7)) };
+    } else {
+      const m = outcome.match(/^(\d+)\s+"?(.+)"?$/);
+      if (m) this.out(`[${m[1]}] ${m[2]}`);
+      else this.out(outcome);
+    }
+  }
+
+  doPrint(rest) {
+    rest = rest.trim();
+    if ((rest.startsWith('"') && rest.endsWith('"')) || (rest.startsWith("'") && rest.endsWith("'"))) {
+      this.out(rest.slice(1,-1)); return;
+    }
+    const specials = { total:1, count:1, result:1, biggest:1, smallest:1, remainder:1, quotient:1, iteration:1,
+      'the biggest':'biggest', 'the smallest':'smallest', 'the bigger one':'biggest' };
+    if (rest in specials) {
+      const key = typeof specials[rest] === 'string' ? specials[rest] : rest;
+      this.out(this.toString(this.variables[key])); return;
+    }
+    if (rest.includes('.') && !/^\d+\.\d+$/.test(rest)) {
+      this.out(this.toString(this.resolveExpr(rest))); return;
+    }
+    const val = this.resolve(rest);
+    if (Array.isArray(val)) val.forEach(item => this.out(this.toString(item)));
+    else if (val && typeof val === 'object') Object.entries(val).forEach(([k,v]) => this.out(`${k}: ${this.toString(v)}`));
+    else this.out(this.toString(val));
+  }
+
+  execLine(line, lines, idx, end) {
+    let m;
+
+    // assignment
+    if (this.isAssignment(line)) {
+      const eqIdx = line.indexOf('=');
+      const varName = line.slice(0, eqIdx).trim();
+      const valStr = line.slice(eqIdx + 1).trim();
+      this.variables[varName] = this.parseValue(valStr);
+      if (Array.isArray(this.variables[varName])) this.currentList = this.variables[varName];
+      return -1;
+    }
+
+    // define function
+    m = line.match(/^define\s+(\w+)(?:\s+with\s+(.+))?$/i);
+    if (m) {
+      const funcName = m[1];
+      const params = m[2] ? m[2].split(',').map(p => p.trim()) : [];
+      const [body, endIdx] = this.collectBlock(lines, idx, end);
+      this.functions[funcName] = { params, body };
+      return endIdx + 1;
+    }
+
+    // run function
+    m = line.match(/^run\s+(\w+)(?:\s+with\s+(.+))?$/i);
+    if (m) {
+      const funcName = m[1];
+      const fn = this.functions[funcName];
+      if (!fn) throw new Error(`Function '${funcName}' is not defined.`);
+      const args = m[2] ? m[2].split(',').map(a => this.resolveExpr(a.trim())) : [];
+      const sub = this.subInterp();
+      fn.params.forEach((p, i) => { sub.variables[p] = args[i] !== undefined ? args[i] : null; });
+      try {
+        sub.execLines(fn.body, 0, fn.body.length);
+      } catch(e) {
+        if (e && e.type === 'return') this.variables['result'] = e.value;
+        else throw e;
+      }
+      for (const [k, v] of Object.entries(sub.variables)) {
+        if (!fn.params.includes(k)) this.variables[k] = v;
+      }
+      this.output.push(...sub.output);
+      return -1;
+    }
+
+    // return
+    m = line.match(/^return\s+(.+)$/i);
+    if (m) throw { type: 'return', value: this.resolveExpr(m[1]) };
+
+    // repeat N times
+    m = line.match(/^repeat\s+(.+?)\s+times$/i);
+    if (m) {
+      const n = Number(this.resolve(m[1]));
+      const [body, endIdx] = this.collectBlock(lines, idx, end);
+      for (let iter = 0; iter < n; iter++) {
+        const sub = this.subInterp();
+        sub.variables['iteration'] = iter + 1;
+        sub.execLines(body, 0, body.length);
+        this.mergeFrom(sub);
+      }
+      return endIdx + 1;
+    }
+
+    // for each item in list
+    m = line.match(/^for\s+each\s+(\w+)\s+in\s+(\w+)$/i);
+    if (m) {
+      const [, itemName, listName] = m;
+      let target = this.resolve(listName);
+      if (!Array.isArray(target)) target = [target];
+      const [body, endIdx] = this.collectBlock(lines, idx, end);
+      for (const item of target) {
+        const sub = this.subInterp();
+        sub.variables[itemName] = item;
+        sub.execLines(body, 0, body.length);
+        for (const [k, v] of Object.entries(sub.variables)) {
+          if (k !== itemName) this.variables[k] = v;
+        }
+        this.output.push(...sub.output);
+      }
+      return endIdx + 1;
+    }
+
+    // go in list [and check if X exists]
+    m = line.match(/^go\s+in\s+(.+?)(?:\s+and\s+check\s+if\s+"?(.+?)"?\s+exists)?$/i);
+    if (m) {
+      const target = this.resolve(m[1].trim());
+      if (m[2]) {
+        this.lastCondition = String(target).includes(m[2]);
+      } else {
+        this.currentList = Array.isArray(target) ? target : String(target).split(/\s+/);
+      }
+      return -1;
+    }
+
+    // find each where
+    m = line.match(/^find\s+each\s+\w+\s+where\s+(.+)$/i);
+    if (m) { this.currentList = this.filterList(this.currentList, m[1], true); return -1; }
+
+    // remove from list where
+    m = line.match(/^remove\s+from\s+(\w+)\s+where\s+(.+)$/i);
+    if (m) {
+      const target = this.resolve(m[1]);
+      const result = this.filterList(Array.isArray(target) ? target : [], m[2], false);
+      this.variables[m[1]] = result;
+      this.currentList = result;
+      return -1;
+    }
+
+    // check each item if X exists
+    m = line.match(/^check\s+each\s+\w+\s+if\s+"?(.+?)"?\s+exists$/i);
+    if (m) {
+      const term = m[1];
+      const valid = (this.currentList||[]).filter(i => String(i).includes(term));
+      const invalid = (this.currentList||[]).filter(i => !String(i).includes(term));
+      this.out(`valid:   [${valid.join(', ')}]`);
+      this.out(`invalid: [${invalid.join(', ')}]`);
+      return -1;
+    }
+
+    // check if
+    m = line.match(/^check\s+if\s+(.+)$/i);
+    if (m) { this.lastCondition = this.evalCondition(m[1]); return -1; }
+
+    // if X → outcome
+    m = line.match(/^if\s+(.+?)\s*→\s*(.+)$/);
+    if (m) {
+      const cond = m[1].trim(), outcome = m[2].trim();
+      let result;
+      if (cond === 'yes') result = this.lastCondition;
+      else if (cond === 'no') result = !this.lastCondition;
+      else { result = this.evalCondition(cond); this.lastCondition = result; }
+      if (result) this.doOutcome(outcome);
+      return -1;
+    }
+
+    // else → outcome
+    m = line.match(/^else\s*→\s*(.+)$/);
+    if (m) { if (!this.lastCondition) this.doOutcome(m[1].trim()); return -1; }
+
+    // make X uppercase/lowercase/trimmed
+    m = line.match(/^make\s+(\w+)\s+(uppercase|lowercase|trimmed)$/i);
+    if (m) {
+      const [,varName, op] = m;
+      const val = String(this.resolve(varName));
+      this.variables[varName] = op === 'uppercase' ? val.toUpperCase() : op === 'lowercase' ? val.toLowerCase() : val.trim();
+      return -1;
+    }
+
+    // replace
+    m = line.match(/^replace\s+"(.+?)"\s+with\s+"(.+?)"\s+in\s+(\w+)$/i);
+    if (m) { this.variables[m[3]] = String(this.resolve(m[3])).split(m[1]).join(m[2]); return -1; }
+
+    // split
+    m = line.match(/^split\s+(\w+)\s+by\s+"(.+?)"\s+into\s+(\w+)$/i);
+    if (m) { this.variables[m[3]] = String(this.resolve(m[1])).split(m[2]); return -1; }
+
+    // join
+    m = line.match(/^join\s+(\w+)\s+with\s+"(.+?)"\s+into\s+(\w+)$/i);
+    if (m) {
+      const val = this.resolve(m[1]);
+      this.variables[m[3]] = Array.isArray(val) ? val.join(m[2]) : String(val);
+      return -1;
+    }
+
+    // get first/last N characters
+    m = line.match(/^get\s+(first|last)\s+(\d+)\s+characters?\s+of\s+(\w+)\s+into\s+(\w+)$/i);
+    if (m) {
+      const n = parseInt(m[2]);
+      const val = String(this.resolve(m[3]));
+      this.variables[m[4]] = m[1] === 'first' ? val.slice(0, n) : val.slice(-n);
+      return -1;
+    }
+
+    // convert
+    m = line.match(/^convert\s+(\w+)\s+to\s+(number|string|integer)(?:\s+into\s+(\w+))?$/i);
+    if (m) {
+      const val = this.resolve(m[1]);
+      const target = m[3] || m[1];
+      this.variables[target] = m[2] === 'string' ? String(val) : Number(val);
+      return -1;
+    }
+
+    // calculate
+    m = line.match(/^calculate\s+(.+?)\s+into\s+(\w+)$/i);
+    if (m) { this.variables[m[2]] = this.evalMath(m[1]); return -1; }
+
+    // multiply/subtract/increase/decrease
+    m = line.match(/^multiply\s+(\w+)\s+by\s+(.+)$/i);
+    if (m) { this.variables[m[1]] = Number(this.resolve(m[1])) * Number(this.resolve(m[2])); return -1; }
+    m = line.match(/^subtract\s+(.+?)\s+from\s+(\w+)$/i);
+    if (m) { this.variables[m[2]] = Number(this.resolve(m[2])) - Number(this.resolve(m[1])); return -1; }
+    m = line.match(/^increase\s+(\w+)\s+by\s+(.+)$/i);
+    if (m) { this.variables[m[1]] = Number(this.resolve(m[1])) + Number(this.resolve(m[2])); return -1; }
+    m = line.match(/^decrease\s+(\w+)\s+by\s+(.+)$/i);
+    if (m) { this.variables[m[1]] = Number(this.resolve(m[1])) - Number(this.resolve(m[2])); return -1; }
+
+    // divide
+    m = line.match(/^divide\s+(\w+)\s+by\s+(.+)$/i);
+    if (m) {
+      const val = Number(this.resolve(m[1])), div = Number(this.resolve(m[2]));
+      if (div === 0) throw new Error('Cannot divide by zero.');
+      this.variables['remainder'] = val % div;
+      this.variables['quotient'] = Math.floor(val / div);
+      return -1;
+    }
+
+    // add all together
+    m = line.match(/^add\s+all\s+(\w+)?\s*together$/i);
+    if (m) {
+      const target = m[1] ? this.resolve(m[1]) : this.currentList;
+      const lst = Array.isArray(target) ? target : [];
+      this.variables['total'] = lst.reduce((s, x) => s + Number(x), 0);
+      return -1;
+    }
+
+    // compare
+    m = line.match(/^compare\s+(\w+)?(?:\s+with\s+each\s+other)?$/i);
+    if (m) {
+      const target = m[1] ? this.resolve(m[1]) : this.currentList;
+      const lst = (Array.isArray(target) ? target : []).map(Number);
+      if (lst.length) { this.variables['biggest'] = Math.max(...lst); this.variables['smallest'] = Math.min(...lst); }
+      return -1;
+    }
+
+    // count characters
+    m = line.match(/^count\s+characters\s+in\s+(\w+)$/i);
+    if (m) { this.variables['count'] = String(this.resolve(m[1])).length; return -1; }
+
+    // count words/list
+    m = line.match(/^count\s+(?:words\s+in\s+)?(?:list\s+)?(\w+)?$/i);
+    if (m) {
+      const val = m[1] ? this.resolve(m[1]) : this.currentList;
+      const count = Array.isArray(val) ? val.length : String(val).split(/\s+/).length;
+      this.variables['count'] = count;
+      this.out(`count: ${count}`);
+      return -1;
+    }
+
+    // start from / go up to
+    m = line.match(/^start\s+from\s+(.+)$/i);
+    if (m) { this.variables['_range_start'] = Number(this.resolve(m[1])); return -1; }
+    m = line.match(/^go\s+up\s+to\s+(.+)$/i);
+    if (m) {
+      const end_ = Number(this.resolve(m[1]));
+      const start = this.variables['_range_start'] || 0;
+      this.currentList = Array.from({length: end_ - start + 1}, (_, i) => start + i);
+      return -1;
+    }
+
+    // date
+    m = line.match(/^get\s+today\s+into\s+(\w+)$/i);
+    if (m) { this.variables[m[1]] = new Date().toISOString().slice(0,10); return -1; }
+    m = line.match(/^get\s+now\s+into\s+(\w+)$/i);
+    if (m) { this.variables[m[1]] = new Date().toLocaleString(); return -1; }
+    m = line.match(/^get\s+(year|month|day|hour|minute|second)\s+into\s+(\w+)$/i);
+    if (m) {
+      const now = new Date();
+      const vals = { year: now.getFullYear(), month: now.getMonth()+1, day: now.getDate(), hour: now.getHours(), minute: now.getMinutes(), second: now.getSeconds() };
+      this.variables[m[2]] = vals[m[1].toLowerCase()];
+      return -1;
+    }
+
+    // make object
+    m = line.match(/^make\s+object\s+(\w+)\s+with\s+(.+)$/i);
+    if (m) {
+      const obj = {};
+      m[2].split(',').forEach(pair => {
+        const [k, v] = pair.split(':').map(s => s.trim());
+        if (k) obj[k] = this.parseValue(v || '');
+      });
+      this.variables[m[1]] = obj;
+      return -1;
+    }
+
+    // set obj.key to value
+    m = line.match(/^set\s+(\w+)\.(\w+)\s+to\s+(.+)$/i);
+    if (m) {
+      let obj = this.variables[m[1]] || {};
+      obj[m[2]] = this.parseValue(m[3]);
+      this.variables[m[1]] = obj;
+      return -1;
+    }
+
+    // get obj.key into var
+    m = line.match(/^get\s+(\w+)\.(\w+)\s+into\s+(\w+)$/i);
+    if (m) {
+      const obj = this.variables[m[1]] || {};
+      this.variables[m[3]] = obj[m[2]];
+      return -1;
+    }
+
+    // append to list
+    m = line.match(/^append\s+(.+?)\s+to\s+(\w+)$/i);
+    if (m) {
+      const val = this.resolveExpr(m[1].trim());
+      if (!Array.isArray(this.variables[m[2]])) this.variables[m[2]] = [];
+      this.variables[m[2]].push(val);
+      return -1;
+    }
+
+    // sort / reverse
+    m = line.match(/^sort\s+(\w+)\s+(ascending|descending)$/i);
+    if (m) {
+      const lst = Array.isArray(this.resolve(m[1])) ? [...this.resolve(m[1])] : [];
+      const asc = m[2] === 'ascending';
+      lst.sort((a,b) => {
+        const an = Number(a), bn = Number(b);
+        if (!isNaN(an) && !isNaN(bn)) return asc ? an-bn : bn-an;
+        return asc ? String(a).localeCompare(String(b)) : String(b).localeCompare(String(a));
+      });
+      this.variables[m[1]] = lst;
+      this.currentList = lst;
+      return -1;
+    }
+    m = line.match(/^reverse\s+(\w+)$/i);
+    if (m) {
+      const lst = Array.isArray(this.resolve(m[1])) ? [...this.resolve(m[1])].reverse() : [];
+      this.variables[m[1]] = lst;
+      this.currentList = lst;
+      return -1;
+    }
+
+    // wait
+    m = line.match(/^wait\s+(.+?)\s+seconds?$/i);
+    if (m) { /* skip in web */ return -1; }
+
+    // ask
+    m = line.match(/^ask\s+(\w+)\s+"(.+)"$/i);
+    if (m) { this.variables[m[1]] = prompt(m[2]) || ''; return -1; }
+
+    // save / load (browser - skip)
+    if (/^save\s+/i.test(line)) { this.out('[save not available in browser]'); return -1; }
+    if (/^load\s+/i.test(line)) { this.out('[load not available in browser]'); return -1; }
+
+    // fetch (browser)
+    m = line.match(/^(?:fetch|call\s+api)\s+"(.+?)"\s+into\s+(\w+)$/i);
+    if (m) { this.out('[HTTP requests not available in browser playground]'); return -1; }
+
+    // print each / all
+    if (/^(print|say)\s+(each|all)$/i.test(line)) {
+      (this.currentList||[]).forEach(item => this.out(this.toString(item)));
+      return -1;
+    }
+
+    // print / say
+    m = line.match(/^(print|say)\s+(.+)$/i);
+    if (m) { this.doPrint(m[2]); return -1; }
+
+    // if count/remainder inline
+    m = line.match(/^if\s+count\s*(>=|<=|>|<|=|!=)\s*(\S+)\s*→\s*(.+)$/);
+    if (m) {
+      const result = this.compare(this.variables['count'], this.resolve(m[2]), m[1]);
+      this.lastCondition = result;
+      if (result) this.doOutcome(m[3].trim());
+      return -1;
+    }
+    m = line.match(/^if\s+remainder\s*(>=|<=|>|<|=|!=)\s*(\S+)\s*→\s*(.+)$/);
+    if (m) {
+      const result = this.compare(this.variables['remainder'], this.resolve(m[2]), m[1] === '=' ? '==' : m[1]);
+      this.lastCondition = result;
+      if (result) this.doOutcome(m[3].trim());
+      return -1;
+    }
+
+    // stop
+    if (line.trim() === 'stop') throw { type: 'stop' };
+
+    // ── NEW FEATURES v1.1 ──────────────────────────────────────────────────
+
+    // while loop
+    m = line.match(/^while\s+(.+)$/i);
+    if (m) {
+      const condStr = m[1];
+      const [body, endIdx] = this.collectBlock(lines, idx, end);
+      let iter = 0;
+      while (iter < 10000 && this.evalCondition(condStr)) {
+        this.execLines(body, 0, body.length);
+        iter++;
+      }
+      return endIdx + 1;
+    }
+
+    // else if
+    m = line.match(/^else\s+if\s+(.+?)\s*→\s*(.+)$/i);
+    if (m) {
+      if (!this.lastCondition) {
+        const result = this.evalCondition(m[1]);
+        this.lastCondition = result;
+        if (result) this.doOutcome(m[2]);
+      }
+      return -1;
+    }
+
+    // break / continue
+    if (line === 'break' || line === 'continue') return -1;
+
+    // random integer between X and Y into var
+    m = line.match(/^random\s+(?:number|integer)\s+between\s+(\S+)\s+and\s+(\S+)\s+into\s+(\w+)$/i);
+    if (m) {
+      const min_ = Number(this.resolve(m[1])), max_ = Number(this.resolve(m[2]));
+      this.variables[m[3]] = Math.floor(Math.random() * (max_ - min_ + 1)) + min_;
+      return -1;
+    }
+
+    // round X to N decimals into result
+    m = line.match(/^round\s+(\w+)\s+to\s+(\d+)\s+decimals?\s+into\s+(\w+)$/i);
+    if (m) {
+      const val = Number(this.resolve(m[1])), n = parseInt(m[2]);
+      this.variables[m[3]] = Math.round(val * Math.pow(10,n)) / Math.pow(10,n);
+      return -1;
+    }
+
+    // round X into result
+    m = line.match(/^round\s+(\w+)\s+into\s+(\w+)$/i);
+    if (m) { this.variables[m[2]] = Math.round(Number(this.resolve(m[1]))); return -1; }
+
+    // absolute value
+    m = line.match(/^absolute\s+(?:value\s+of\s+)?(\w+)\s+into\s+(\w+)$/i);
+    if (m) { this.variables[m[2]] = Math.abs(Number(this.resolve(m[1]))); return -1; }
+
+    // power of X to Y into result
+    m = line.match(/^power\s+of\s+(\S+)\s+to\s+(\S+)\s+into\s+(\w+)$/i);
+    if (m) { this.variables[m[3]] = Math.pow(Number(this.resolve(m[1])), Number(this.resolve(m[2]))); return -1; }
+
+    // format X to N decimals into result
+    m = line.match(/^format\s+(\w+)\s+to\s+(\d+)\s+decimals?\s+into\s+(\w+)$/i);
+    if (m) { this.variables[m[3]] = Number(this.resolve(m[1])).toFixed(parseInt(m[2])); return -1; }
+
+    // check if X starts with "Y"
+    m = line.match(/^check\s+if\s+(\w+)\s+starts\s+with\s+"(.+)"$/i);
+    if (m) { this.lastCondition = String(this.resolve(m[1])).startsWith(m[2]); return -1; }
+
+    // check if X ends with "Y"
+    m = line.match(/^check\s+if\s+(\w+)\s+ends\s+with\s+"(.+)"$/i);
+    if (m) { this.lastCondition = String(this.resolve(m[1])).endsWith(m[2]); return -1; }
+
+    // check if X contains "Y"
+    m = line.match(/^check\s+if\s+(\w+)\s+contains\s+"(.+)"$/i);
+    if (m) { this.lastCondition = String(this.resolve(m[1])).includes(m[2]); return -1; }
+
+    // get length of X into result
+    m = line.match(/^get\s+length\s+of\s+(\w+)\s+into\s+(\w+)$/i);
+    if (m) {
+      const val = this.resolve(m[1]);
+      this.variables[m[2]] = Array.isArray(val) ? val.length : String(val).length;
+      return -1;
+    }
+
+    // find "X" in Y into result
+    m = line.match(/^find\s+"(.+?)"\s+in\s+(\w+)\s+into\s+(\w+)$/i);
+    if (m) { this.variables[m[3]] = String(this.resolve(m[2])).indexOf(m[1]); return -1; }
+
+    // combine A and B into result
+    m = line.match(/^combine\s+(.+?)\s+and\s+(.+?)\s+into\s+(\w+)$/i);
+    if (m) { this.variables[m[3]] = this.toString(this.resolveExpr(m[1])) + this.toString(this.resolveExpr(m[2])); return -1; }
+
+    // get item N from list into result
+    m = line.match(/^get\s+item\s+(\d+)\s+from\s+(\w+)\s+into\s+(\w+)$/i);
+    if (m) {
+      const lst = this.resolve(m[2]);
+      const n = parseInt(m[1]);
+      this.variables[m[3]] = Array.isArray(lst) ? (lst[n-1] !== undefined ? lst[n-1] : null) : null;
+      return -1;
+    }
+
+    // check if list contains value
+    m = line.match(/^check\s+if\s+(\w+)\s+contains\s+(\S+)$/i);
+    if (m) {
+      const lst = this.resolve(m[1]);
+      const needle = this.toString(this.resolve(m[2]));
+      this.lastCondition = Array.isArray(lst) ? lst.some(i => this.toString(i) === needle) : false;
+      return -1;
+    }
+
+    // remove item N from list
+    m = line.match(/^remove\s+item\s+(\d+)\s+from\s+(\w+)$/i);
+    if (m) {
+      const n = parseInt(m[1]);
+      if (Array.isArray(this.variables[m[2]])) {
+        this.variables[m[2]] = [...this.variables[m[2]]];
+        this.variables[m[2]].splice(n-1, 1);
+        this.currentList = this.variables[m[2]];
+      }
+      return -1;
+    }
+
+    // remove value "X" from list
+    m = line.match(/^remove\s+value\s+"?(.+?)"?\s+from\s+(\w+)$/i);
+    if (m) {
+      const needle = m[1];
+      if (Array.isArray(this.variables[m[2]])) {
+        this.variables[m[2]] = this.variables[m[2]].filter(i => this.toString(i) !== needle);
+        this.currentList = this.variables[m[2]];
+      }
+      return -1;
+    }
+
+    // print X with N decimals
+    m = line.match(/^print\s+(\w+)\s+with\s+(\d+)\s+decimals?$/i);
+    if (m) { this.out(Number(this.resolve(m[1])).toFixed(parseInt(m[2]))); return -1; }
+
+    return -1;
+  }
+
+  isAssignment(line) {
+    if (/→/.test(line)) return false;
+    const eqIdx = line.indexOf('=');
+    if (eqIdx < 0) return false;
+    if (eqIdx > 0 && '><=!'.includes(line[eqIdx-1])) return false;
+    if (line[eqIdx+1] === '=') return false;
+    const varName = line.slice(0, eqIdx).trim();
+    if (varName.includes(' ')) return false;
+    if (!varName || !/^[a-zA-Z_]/.test(varName)) return false;
+    const blocked = ['go','find','check','remove','add','compare','divide','start','print','say','repeat','define','ask','save','load','send','increase','decrease','append','set','run','if','else','multiply','subtract','calculate','get','make','convert','split','join','replace','call','fetch','sort','reverse','wait','for','return','while','random','round','absolute','power','format','combine'];
+    for (const b of blocked) if (line.startsWith(b + ' ')) return false;
+    const exact = ['stop','break','continue','done'];
+    if (exact.includes(varName)) return false;
+    return true;
+  }
+
+  evalMath(expr) {
+    // replace variables
+    for (const [name, val] of Object.entries(this.variables)) {
+      if (typeof val === 'number') {
+        expr = expr.replace(new RegExp(`\\b${name}\\b`, 'g'), val);
+      }
+    }
+    // replace sqrt()
+    expr = expr.replace(/sqrt\(([^)]+)\)/g, (_, n) => Math.sqrt(Number(n)));
+    try {
+      // safe eval using Function
+      const result = Function('"use strict"; return (' + expr + ')')();
+      return typeof result === 'number' && Number.isInteger(result) ? result : Math.round(result * 1000) / 1000;
+    } catch { return 0; }
+  }
+}
+
+// ── Syntax Highlighting ────────────────────────────────────────────────────────
+
+const KEYWORDS = {
+  control: ['if', 'else', 'check', 'go in', 'go up to', 'start from', 'repeat', 'times', 'done', 'stop', 'return', 'for each', 'in'],
+  action:  ['find', 'remove', 'append', 'sort', 'reverse', 'print', 'say', 'ask', 'save', 'load', 'fetch', 'call', 'run', 'define', 'with', 'make', 'set', 'get'],
+  logic:   ['and', 'or', 'not', 'yes', 'no', 'where', 'each', 'exists', 'is', 'from', 'to', 'into', 'all', 'every', 'any'],
+  math:    ['add', 'together', 'divide', 'by', 'multiply', 'subtract', 'increase', 'decrease', 'compare', 'calculate', 'count', 'characters', 'words', 'list', 'total', 'remainder', 'quotient', 'biggest', 'smallest', 'result'],
+  string_ops: ['uppercase', 'lowercase', 'trimmed', 'replace', 'split', 'join', 'convert', 'number', 'string', 'integer', 'first', 'last'],
+  builtin: ['count', 'total', 'result', 'biggest', 'smallest', 'remainder', 'quotient', 'iteration', 'today', 'now'],
+};
+
+function highlightLine(line) {
+  if (line.trim().startsWith('#')) {
+    return `<span class="t-comment">${escHtml(line)}</span>`;
+  }
+
+  let result = '';
+  let i = 0;
+  const chars = line;
+
+  while (i < chars.length) {
+    // string
+    if (chars[i] === '"' || chars[i] === "'") {
+      const quote = chars[i];
+      let j = i + 1;
+      while (j < chars.length && chars[j] !== quote) j++;
+      result += `<span class="t-string">${escHtml(chars.slice(i, j+1))}</span>`;
+      i = j + 1;
+      continue;
+    }
+
+    // arrow
+    if (chars[i] === '→' || (chars[i] === '-' && chars[i+1] === '>')) {
+      const arrow = chars[i] === '→' ? '→' : '->';
+      result += `<span class="t-arrow">${arrow}</span>`;
+      i += arrow.length;
+      continue;
+    }
+
+    // number
+    if (/\d/.test(chars[i]) && (i === 0 || /\W/.test(chars[i-1]))) {
+      let j = i;
+      while (j < chars.length && /[\d.]/.test(chars[j])) j++;
+      result += `<span class="t-number">${escHtml(chars.slice(i, j))}</span>`;
+      i = j;
+      continue;
+    }
+
+    // operator
+    if ('>=<!'.includes(chars[i]) && '>=!'.includes(chars[i])) {
+      let op = chars[i];
+      if (chars[i+1] === '=') op += '=';
+      result += `<span class="t-op">${escHtml(op)}</span>`;
+      i += op.length;
+      continue;
+    }
+    if (chars[i] === '=' && chars[i+1] !== '=') {
+      result += `<span class="t-op">=</span>`;
+      i++; continue;
+    }
+
+    // word
+    if (/[a-zA-Z_]/.test(chars[i])) {
+      let j = i;
+      while (j < chars.length && /[\w.]/.test(chars[j])) j++;
+      const word = chars.slice(i, j);
+      const wordL = word.toLowerCase();
+
+      // check multi-word first
+      const rest = chars.slice(i).toLowerCase();
+      let matched = false;
+      for (const [type, words] of Object.entries(KEYWORDS)) {
+        const multiWords = words.filter(w => w.includes(' '));
+        for (const kw of multiWords) {
+          if (rest.startsWith(kw)) {
+            result += `<span class="t-${type === 'control' ? 'control' : type === 'action' ? 'action' : type === 'logic' ? 'logic' : type === 'math' ? 'math' : 'action'}">${escHtml(chars.slice(i, i + kw.length))}</span>`;
+            i += kw.length;
+            matched = true;
+            break;
+          }
+        }
+        if (matched) break;
+      }
+      if (matched) continue;
+
+      let cls = 't-plain';
+      if (KEYWORDS.control.includes(wordL)) cls = 't-control';
+      else if (KEYWORDS.action.includes(wordL)) cls = 't-action';
+      else if (KEYWORDS.logic.includes(wordL)) cls = 't-logic';
+      else if (KEYWORDS.math.includes(wordL)) cls = 't-math';
+      else if (KEYWORDS.string_ops.includes(wordL)) cls = 't-math';
+      else if (['true','false','null','nothing'].includes(wordL)) cls = 't-bool';
+      else if (KEYWORDS.builtin.includes(wordL)) cls = 't-builtin';
+
+      result += `<span class="${cls}">${escHtml(word)}</span>`;
+      i = j;
+      continue;
+    }
+
+    result += escHtml(chars[i]);
+    i++;
+  }
+  return result;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+
+// ── Run code ──────────────────────────────────────────────────────────────────
+
+function runCode() {
+  const code = document.getElementById('editor').value;
+  const outputEl = document.getElementById('output');
+  const statusTag = document.getElementById('statusTag');
+
+  // show running state
+  outputEl.innerHTML = '<span class="output-line muted"><span class="running-dot"></span>Running...</span>';
+  statusTag.style.display = 'none';
+
+  setTimeout(() => {
+    const interp = new PseudoInterpreter();
+    const start = performance.now();
+
+    try {
+      interp.execute(code);
+    } catch(e) {
+      interp.output.push({ type: 'err', text: String(e.message || e) });
+    }
+
+    const elapsed = ((performance.now() - start) / 1000).toFixed(3);
+    const hasErrors = interp.output.some(o => o.type === 'err');
+
+    if (interp.output.length === 0) {
+      outputEl.innerHTML = '<span class="output-empty">(no output)</span>';
+    } else {
+      outputEl.innerHTML = interp.output.map(line => {
+        const cls = line.type === 'err' ? 'err' : 'out';
+        return `<span class="output-line ${cls}">${escHtml(String(line.text))}</span>`;
+      }).join('');
+    }
+
+    // status
+    statusTag.style.display = 'block';
+    statusTag.style.color = hasErrors ? 'var(--red)' : 'var(--green)';
+    statusTag.style.background = hasErrors ? 'rgba(248,113,113,0.1)' : 'rgba(74,222,128,0.1)';
+    statusTag.style.border = `1px solid ${hasErrors ? 'rgba(248,113,113,0.3)' : 'rgba(74,222,128,0.3)'}`;
+    statusTag.textContent = hasErrors ? `✗ error` : `✓ ${elapsed}s`;
+
+    outputEl.scrollTop = 0;
+  }, 10);
+}
+
+function clearOutput() {
+  document.getElementById('output').innerHTML = '<span class="output-empty">Run your program to see output here...</span>';
+  document.getElementById('statusTag').style.display = 'none';
+}
+
+// ── Examples ──────────────────────────────────────────────────────────────────
+
+function loadExample(name) {
+  document.getElementById('editor').value = EXAMPLES[name] || '';
+  updateHighlight();
+  clearOutput();
+  document.querySelectorAll('.example-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${name}'`));
+  });
+}
+
+// ── Docs ──────────────────────────────────────────────────────────────────────
+
+function showDoc(name) {
+  document.getElementById('docsContent').innerHTML = DOCS[name] || '';
+  document.querySelectorAll('.docs-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.getAttribute('onclick').includes(`'${name}'`));
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+function updateHighlight() {
+  const editor = document.getElementById('editor');
+  const highlight = document.getElementById('highlight');
+  const lineNumbers = document.getElementById('lineNumbers');
+  if (!editor || !highlight || !lineNumbers) return;
+  const lines = editor.value.split('\n');
+  highlight.innerHTML = lines.map(l => highlightLine(l)).join('\n') + '\n';
+  highlight.scrollTop = editor.scrollTop;
+  highlight.scrollLeft = editor.scrollLeft;
+  lineNumbers.innerHTML = lines.map((_, i) => `<span class="line-num">${i+1}</span>`).join('');
+  lineNumbers.scrollTop = editor.scrollTop;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const editor = document.getElementById('editor');
+
+  editor.addEventListener('input', updateHighlight);
+  editor.addEventListener('scroll', () => {
+    document.getElementById('highlight').scrollTop = editor.scrollTop;
+    document.getElementById('highlight').scrollLeft = editor.scrollLeft;
+    document.getElementById('lineNumbers').scrollTop = editor.scrollTop;
+  });
+
+  editor.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCode();
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      editor.value = editor.value.slice(0, start) + '    ' + editor.value.slice(end);
+      editor.selectionStart = editor.selectionEnd = start + 4;
+      updateHighlight();
+    }
+  });
+
+  loadExample('basics');
+  showDoc('variables');
+});
+</script>
+</body>
+</html>
