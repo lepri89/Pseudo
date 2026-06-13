@@ -1,0 +1,60 @@
+# showcase.pseudo
+# Full showcase of Pseudo v1.0
+
+# --- Variables ---
+name = "Lepri"
+age = 21
+scores = [85, 42, 91, 67, 38, 75]
+
+# --- Even or odd ---
+number = 18
+divide number by 2
+if remainder = 0 → say "18 is even"
+else → say "18 is odd"
+
+# --- Password strength ---
+password = "mypassword123"
+count characters in password
+if count >= 8 → say "password is strong"
+else → say "password is weak"
+
+# --- Filter passing scores ---
+go in scores
+find each item where item >= 50
+print each
+
+# --- Sum all scores ---
+add all scores together
+print total
+
+# --- Biggest score ---
+compare scores
+print biggest
+
+# --- Range ---
+start from 1
+go up to 5
+print each
+
+# --- Remove negatives ---
+numbers = [4, -2, 7, -5, 3, -1, 9]
+remove from numbers where number < 0
+print numbers
+
+# --- Email validation ---
+emails = [test@gmail.com, invalidemail, hello@yahoo.com, notvalid]
+go in emails
+check each email if "@" exists
+
+# --- Repeat ---
+repeat 3 times
+    say "Pseudo is the future"
+done
+
+# --- Function ---
+define add_numbers with a, b
+    increase a by b
+    print a
+done
+
+run add_numbers with 10, 25
