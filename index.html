@@ -427,12 +427,83 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-  /* ── Mobile ────────────────────────────────────────────────── */
+  .mobile-examples {
+    display: none;
+    font-family: var(--font-code);
+    font-size: 11px;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+
   @media (max-width: 700px) {
-    .main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
-    .editor-panel { border-right: none; border-bottom: 1px solid var(--border); }
-    .header-center { display: none; }
-    .shortcut-hint { display: none; }
+    .mobile-examples { display: block; }
+  }
+  @media (max-width: 700px) {
+    html, body { overflow: auto; }
+
+    .app {
+      height: auto;
+      min-height: 100vh;
+      grid-template-rows: 52px auto;
+    }
+
+    .main {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto;
+      height: auto;
+      overflow: visible;
+    }
+
+    .editor-panel {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      height: 60vh;
+      overflow: hidden;
+    }
+
+    .editor-wrap {
+      height: calc(60vh - 38px - 54px);
+    }
+
+    textarea#editor {
+      height: 100%;
+    }
+
+    .output-panel {
+      height: auto;
+      min-height: 40vh;
+    }
+
+    .output-body {
+      min-height: 200px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .docs-bar {
+      position: static;
+    }
+
+    .docs-content {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .header-center {
+      display: none;
+    }
+
+    .shortcut-hint {
+      display: none;
+    }
+
+    .run-bar {
+      padding: 8px 12px;
+    }
   }
 </style>
 </head>
@@ -491,6 +562,17 @@
           Run
         </button>
         <button class="clear-btn" onclick="clearOutput()">Clear</button>
+        <select class="mobile-examples" onchange="loadExample(this.value)" title="Examples">
+          <option value="basics">basics</option>
+          <option value="filter">filter list</option>
+          <option value="functions">functions</option>
+          <option value="strings">strings</option>
+          <option value="objects">objects</option>
+          <option value="loops">loops</option>
+          <option value="math">math</option>
+          <option value="game">guessing game</option>
+          <option value="grades">grade calculator</option>
+        </select>
         <span class="shortcut-hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run</span>
       </div>
     </div>
